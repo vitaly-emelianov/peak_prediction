@@ -1,7 +1,5 @@
 import pandas as pd
 import datetime as dt
-from matplotlib import pyplot as plt
-import seaborn as sns
 
 
 def is_weekend(date):
