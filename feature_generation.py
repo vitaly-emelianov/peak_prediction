@@ -16,7 +16,7 @@ def is_holiday(date):
 
 # Reading data
 data = pd.read_csv('./data.csv')
-data.REPORT_DATE = pd.to_datetime(data.REPORT_DATE, format='%d.%m.%Y')
+data.REPORT_DATE = pd.to_datetime(data.REPORT_DATE, format='%Y-%m-%d')
 
 # Generating features
 branch_ids = data.BRANCH_ID.unique()
