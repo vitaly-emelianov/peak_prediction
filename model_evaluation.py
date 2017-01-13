@@ -30,25 +30,25 @@ def train_test_split(data, month, year):
     return data.loc[train_mask], data.loc[test_mask]
 
 
-def test_classifier(clf, data, month, year):
+def test_model(model, data, month, year):
     """Test classifier on last month."""
     train, test = train_test_split(data, month, year)
     branch_ids = test.BRANCH_ID.unique()
     X_train = train.drop(axis=1, labels=['REPORT_DATE', 'BRANCH_ID', 'IS_PEAK', 'SOFT_PEAK'])
     y_train = train['SOFT_PEAK']
-    clf.fit(X_train, y_train)
+    model.fit(X_train, y_train)
     month_counts = []
     for i, branch_id in enumerate(branch_ids):
         test_for_branch = test.loc[test.BRANCH_ID == branch_id, :]
         X_test = test_for_branch.drop(axis=1, labels=['REPORT_DATE', 'BRANCH_ID', 'IS_PEAK', 'SOFT_PEAK'])
         y_test = test_for_branch['SOFT_PEAK']
-        probs_pred = clf.predict_proba(X_test)[:, 1]
+        probs_pred = model.predict_proba(X_test)[:, 1]
         y_pred = get_labels_from_probs(probs_pred)
         month_counts.append(get_number_of_peak_match(y_pred, y_test))
     return np.mean(month_counts)
 
 
-def get_average_of_correct_guessed_peaks(clf, data, start=12):
+def get_average_of_correct_guessed_peaks(model, data, start=12):
     """Get average of predicted peaks for month by starting one."""
     months = data.REPORT_DATE.map(lambda x: x.month)
     years = data.REPORT_DATE.map(lambda x: x.year)
@@ -57,10 +57,11 @@ def get_average_of_correct_guessed_peaks(clf, data, start=12):
     averages = []
 
     for year, month in chunks[start:]:
-        avgs = test_classifier(clf, data, month, year)
+        avgs = test_model(model, data, month, year)
         averages.append(avgs)
         print month, year, avgs
     return pd.Series(data=averages, index=chunks[start:])
+
 
 # Reading generated features
 data = pd.read_csv('./features.csv')
@@ -76,7 +77,8 @@ train_mask = ((months < month) & (years == year)) | (years < year)
 # Saving all peaks in a dictionary
 all_peaks = {}
 for item in data.itertuples():
-    date_in_train = (item.REPORT_DATE.year < year) or (item.REPORT_DATE.year == year and item.REPORT_DATE.month < month)
+    date_in_train = (item.REPORT_DATE.year < year) or \
+                    (item.REPORT_DATE.year == year and item.REPORT_DATE.month < month)
     if date_in_train and item.IS_PEAK:
         if item.BRANCH_ID not in all_peaks:
             all_peaks[item.BRANCH_ID] = {item.REPORT_DATE}
